@@ -44,6 +44,7 @@ export function ValidateLatLngUser(): MethodDecorator {
       const lng = request?.lng;
       const user = args[1];
 
+      const disableDemoRestrictions = process.env.DISABLE_DEMO_RESTRICTIONS === 'true';
       if (lat && lng && user?.isDemoAccount && !disableDemoRestrictions) {
         // Allow within 10,000 meters of any demo city
         const withinRadius = demoCities.some(city =>
