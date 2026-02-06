@@ -44,11 +44,13 @@ export function ValidateLatLngUser(): MethodDecorator {
       const lng = request?.lng;
       const user = args[1];
 
-      if (lat && lng && user?.isDemoAccount) {
+      if (lat && lng && user?.isDemoAccount && !disableDemoRestrictions) {
         // Allow within 10,000 meters of any demo city
         const withinRadius = demoCities.some(city =>
           haversineDistance(lat, lng, city.lat, city.lng) <= 10000
         );
+      // Skip demo restrictions if DISABLE_DEMO_RESTRICTIONS is set
+      const disableDemoRestrictions = process.env.DISABLE_DEMO_RESTRICTIONS === 'true';
         if (!withinRadius) {
           throw new BadRequestException(
             `Demo accounts can only access locations within 10,000 meters of demo cities. Demo cities: ${demoCities.map(city => JSON.stringify(city)).join(", ")}. Signup for a Free account at https://overturemaps.com/`
