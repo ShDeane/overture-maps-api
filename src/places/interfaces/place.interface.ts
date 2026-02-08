@@ -17,6 +17,9 @@ export interface Place {
     brand?: Brand;
     addresses: Address[];
     ext_distance?: number;
+    operating_status?: string;
+    basic_category?: string;
+    taxonomy?: Taxonomy;
     theme?: string;
     type?: string;
   }
@@ -49,6 +52,12 @@ export interface PlaceWithBuilding extends Place {
     alternate?: string[];
   }
   
+  export interface Taxonomy {
+    primary?: string;
+    hierarchy?: string[];
+    alternates?: string[];
+  }
+
   export interface Brand {
     names: BrandNames;
     wikidata?: string;

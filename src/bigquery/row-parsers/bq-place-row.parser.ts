@@ -50,6 +50,13 @@ export const parsePlaceRow = (row: any): Place => {
           country: address.element?.country,
         })) : [],
         ext_distance: parseFloat(row.ext_distance),
+        operating_status: row.operating_status || undefined,
+        basic_category: row.basic_category || undefined,
+        taxonomy: row.taxonomy ? {
+          primary: row.taxonomy.primary || undefined,
+          hierarchy: row.taxonomy?.hierarchy?.list?.map((h: any) => h.element) || [],
+          alternates: row.taxonomy?.alternates?.list?.map((a: any) => a.element) || [],
+        } : undefined,
       }
     }
 

@@ -55,6 +55,17 @@ export class AddressDto {
 }
 
 
+export class TaxonomyDto {
+  @ApiPropertyOptional({ description: 'Primary taxonomy category.', example: 'italian_restaurant' })
+  primary?: string;
+
+  @ApiPropertyOptional({ description: 'Full hierarchical category path.', type: [String], example: ['food_and_drink', 'restaurant', 'italian_restaurant'] })
+  hierarchy?: string[];
+
+  @ApiPropertyOptional({ description: 'Alternate taxonomy categories.', type: [String] })
+  alternates?: string[];
+}
+
 export class PlacePropertiesDto {
 
   @ApiProperty({ description: 'Primary category of the place.', type: () => CategoryDto })
@@ -86,6 +97,15 @@ export class PlacePropertiesDto {
     type: [AddressDto],
   })
   addresses?: AddressDto[];
+
+  @ApiPropertyOptional({ description: 'Operating status of the place.', example: 'open', enum: ['open', 'closed_temporarily', 'closed_permanently'] })
+  operating_status?: string;
+
+  @ApiPropertyOptional({ description: 'Simplified base category.', example: 'restaurant' })
+  basic_category?: string;
+
+  @ApiPropertyOptional({ description: 'Full taxonomy with hierarchy.', type: () => TaxonomyDto })
+  taxonomy?: TaxonomyDto;
 
   @ApiProperty({ description: 'Theme associated with the place.', example: 'Restaurant' })
   theme?: string;

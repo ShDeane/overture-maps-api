@@ -33,6 +33,8 @@ export class BrandDto {
   })
   names: BrandNamesDto;
 
+  @ApiPropertyOptional({ description: 'Wikidata identifier for the brand.', example: 'Q37158' })
+  wikidata?: string;
 
   constructor(data: Brand) {
     Object.assign(this, data);
