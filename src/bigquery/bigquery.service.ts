@@ -224,8 +224,6 @@ export class BigQueryService {
           p.*,
           p.wikidata,
           p.wikipedia,
-          p.taxonomy.wikidata as tax_wikidata,
-          p.taxonomy.wikipedia as tax_wikipedia,
           p.brand.wikidata as brand_wikidata,
           b.building_id as building_id,
           b.building_geometry AS building_geometry,
@@ -260,8 +258,6 @@ export class BigQueryService {
         p.*,
         p.wikidata,
         p.wikipedia,
-        p.taxonomy.wikidata as tax_wikidata,
-        p.taxonomy.wikipedia as tax_wikipedia,
         p.brand.wikidata as brand_wikidata,
         b.id as building_id,
         b.geometry AS building_geometry,
@@ -319,7 +315,7 @@ export class BigQueryService {
 
     // Base query and distance calculation if latitude and longitude are provided
     queryParts.push(`-- Overture Maps API: Get places nearby \n`);
-    queryParts.push(`SELECT *, wikidata, wikipedia, taxonomy.wikidata as tax_wikidata, taxonomy.wikipedia as tax_wikipedia, brand.wikidata as brand_wikidata`);
+    queryParts.push(`SELECT *, wikidata, wikipedia, brand.wikidata as brand_wikidata`);
 
     if (latitude && longitude) {
       queryParts.push(`, ST_Distance(geometry, ST_GeogPoint(${longitude}, ${latitude})) AS ext_distance`);

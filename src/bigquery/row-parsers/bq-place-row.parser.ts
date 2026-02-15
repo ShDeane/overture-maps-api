@@ -1,5 +1,39 @@
 import { Place, PlaceWithBuilding } from "../../places/interfaces/place.interface"
-import { parsePointToGeoJSON, parsePolygonToGeoJSON, parseWKTToGeoJSON } from "../../utils/geojson"
+import { parsePointToGeoJSON, parseWKTToGeoJSON } from "../../utils/geojson"
+
+/**
+ * Search the sources and external_ids arrays for a matching dataset/source key.
+ * Does NOT look at top-level aliases — callers handle scoped fields (brand.wikidata etc.) directly.
+ */
+const findIdInArrays = (row: any, datasetKey: string): string | undefined => {
+  const k = datasetKey.toLowerCase();
+
+  // Check external_ids array: BQ shape {list: [{element: {side, value}}]} or flat array
+  const externalIds = row.external_ids;
+  if (externalIds) {
+    const items = Array.isArray(externalIds) ? externalIds : (externalIds.list || []);
+    const match = items.find((i: any) => {
+      const item = i.element || i;
+      return (item.side || item.source || '').toLowerCase() === k;
+    });
+    const el = match?.element || match;
+    if (el?.value) return el.value;
+  }
+
+  // Check sources array for matching dataset
+  const sources = row.sources;
+  if (sources) {
+    const items = Array.isArray(sources) ? sources : (sources.list || []);
+    const match = items.find((i: any) => {
+      const item = i.element || i;
+      return (item.dataset || '').toLowerCase() === k;
+    });
+    const el = match?.element || match;
+    if (el?.record_id) return el.record_id;
+  }
+
+  return undefined;
+};
 
 export const parsePlaceRow = (row: any): Place => {
 
@@ -13,13 +47,19 @@ export const parsePlaceRow = (row: any): Place => {
       ymax: parseFloat(row.bbox.ymax),
     },
     version: row.version,
-    sources: row.sources.list.map((source: any) => ({
+    sources: row.sources?.list ? row.sources.list.map((source: any) => ({
       property: source.element.property,
       dataset: source.element.dataset,
       record_id: source.element.record_id,
       update_time: source.element.update_time,
       confidence: source.element.confidence ? parseFloat(source.element.confidence) : null,
-    })),
+    })) : (Array.isArray(row.sources) ? row.sources.map((s: any) => ({
+      property: s.property,
+      dataset: s.dataset,
+      record_id: s.record_id,
+      update_time: s.update_time,
+      confidence: s.confidence ? parseFloat(s.confidence) : null,
+    })) : []),
     names: {
       primary: row.names.primary,
       common: row.names.common,
@@ -27,13 +67,16 @@ export const parsePlaceRow = (row: any): Place => {
     },
     categories: {
       primary: row.categories?.primary,
-      alternate: row.categories?.alternate?.split ? row.categories?.alternate?.split(',') : [],
+      alternate: row.categories?.alternate?.list
+        ? row.categories.alternate.list.map((a: any) => a.element)
+        : (Array.isArray(row.categories?.alternate) ? row.categories.alternate
+        : (row.categories?.alternate?.split ? row.categories.alternate.split(',') : [])),
     },
     confidence: parseFloat(row.confidence),
     websites: row.websites?.split ? row.websites.split(',') : [],
-    socials: row.socials?.list ? row.socials.list.map((social: any) => social.element) : [],
+    socials: row.socials?.list ? row.socials.list.map((social: any) => social.element) : (Array.isArray(row.socials) ? row.socials : []),
     emails: row.emails?.split ? row.emails.split(',') : [],
-    phones: row.phones?.list ? row.phones.list.map((phone: any) => phone.element) : [],
+    phones: row.phones?.list ? row.phones.list.map((phone: any) => phone.element) : (Array.isArray(row.phones) ? row.phones : []),
     brand: row.brand ? {
       names: {
         primary: row.brand?.names?.primary,
@@ -50,37 +93,26 @@ export const parsePlaceRow = (row: any): Place => {
       postcode: address.element?.postcode,
       region: address.element?.region,
       country: address.element?.country,
-    })) : [],
+    })) : (Array.isArray(row.addresses) ? row.addresses.map((a: any) => ({
+      freeform: a.freeform,
+      locality: a.locality,
+      postcode: a.postcode,
+      region: a.region,
+      country: a.country,
+    })) : []),
     ext_distance: parseFloat(row.ext_distance),
     operating_status: row.operating_status || undefined,
     basic_category: row.basic_category || undefined,
     external_ids: {
-      wikidata: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'wikidata' || s.element?.source?.toLowerCase() === 'wikidata')?.element?.value ||
-        row.wikidata ||
-        row.taxonomy?.wikidata ||
-        row.tax_wikidata ||
-        row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'wikidata')?.element?.record_id ||
-        undefined,
-      wikipedia: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'wikipedia' || s.element?.source?.toLowerCase() === 'wikipedia')?.element?.value ||
-        row.wikipedia ||
-        row.taxonomy?.wikipedia ||
-        row.tax_wikipedia ||
-        row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'wikipedia')?.element?.record_id ||
-        undefined,
-      osm: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'osm' || s.element?.source?.toLowerCase() === 'osm')?.element?.value ||
-        row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'osm')?.element?.record_id ||
-        undefined,
-      google_places: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'google' || s.element?.source?.toLowerCase() === 'google')?.element?.value ||
-        row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'google')?.element?.record_id ||
-        undefined,
+      wikidata: row.wikidata || findIdInArrays(row, 'wikidata') || undefined,
+      wikipedia: row.wikipedia || findIdInArrays(row, 'wikipedia') || undefined,
+      osm: findIdInArrays(row, 'osm') || undefined,
+      google_places: findIdInArrays(row, 'google') || undefined,
     },
     taxonomy: row.taxonomy ? {
       primary: row.taxonomy.primary || undefined,
-      hierarchy: row.taxonomy?.hierarchy?.list?.map((h: any) => h.element) || [],
-      alternates: row.taxonomy?.alternates?.list?.map((a: any) => a.element) || [],
-      external_ids: {
-        wikidata: row.taxonomy.wikidata || undefined,
-      }
+      hierarchy: row.taxonomy?.hierarchy?.list?.map((h: any) => h.element) || (Array.isArray(row.taxonomy?.hierarchy) ? row.taxonomy.hierarchy : []),
+      alternates: row.taxonomy?.alternates?.list?.map((a: any) => a.element) || (Array.isArray(row.taxonomy?.alternates) ? row.taxonomy.alternates : []),
     } : undefined,
   }
 }
