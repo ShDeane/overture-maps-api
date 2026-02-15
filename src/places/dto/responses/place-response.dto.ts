@@ -9,6 +9,20 @@ import { GetByLocationDto } from '../../../common/dto/requests/get-by-location.d
 
 import { applyIncludesToDto } from '../../../common/dto/responses/includes.dto';
 
+export class ExternalIdsDto {
+  @ApiPropertyOptional({ description: 'Wikidata entity ID.', example: 'Q160236' })
+  wikidata?: string;
+
+  @ApiPropertyOptional({ description: 'Wikipedia page identifier.', example: 'en:Central_Park' })
+  wikipedia?: string;
+
+  @ApiPropertyOptional({ description: 'OpenStreetMap identifier.', example: 'node/123' })
+  osm?: string;
+
+  @ApiPropertyOptional({ description: 'Google Places identifier.', example: 'ChIJ... ' })
+  google_places?: string;
+}
+
 export class RulesDto {
   @ApiProperty({ description: 'Variant of the rule.', example: 'Abbreviation' })
   variant: string;
@@ -31,7 +45,7 @@ export class PlaceNamesDto {
   @ApiProperty({ description: 'Primary name of the place.', example: 'Central Park' })
   primary: string;
 
-  @ApiPropertyOptional({ description: 'Common names in different languages.', type: 'object', example: { en: 'Central Park', es: 'Parque Central' } , properties: {}})
+  @ApiPropertyOptional({ description: 'Common names in different languages.', type: 'object', example: { en: 'Central Park', es: 'Parque Central' }, properties: {} })
   common?: Record<string, string>;
 
   @ApiPropertyOptional({
@@ -64,6 +78,9 @@ export class TaxonomyDto {
 
   @ApiPropertyOptional({ description: 'Alternate taxonomy categories.', type: [String] })
   alternates?: string[];
+
+  @ApiPropertyOptional({ description: 'External knowledge graph identifiers.', type: () => ExternalIdsDto })
+  external_ids?: ExternalIdsDto;
 }
 
 export class PlacePropertiesDto {
@@ -107,6 +124,9 @@ export class PlacePropertiesDto {
   @ApiPropertyOptional({ description: 'Full taxonomy with hierarchy.', type: () => TaxonomyDto })
   taxonomy?: TaxonomyDto;
 
+  @ApiPropertyOptional({ description: 'External knowledge graph identifiers.', type: () => ExternalIdsDto })
+  external_ids?: ExternalIdsDto;
+
   @ApiProperty({ description: 'Theme associated with the place.', example: 'Restaurant' })
   theme?: string;
 
@@ -137,14 +157,14 @@ export class PlacePropertiesDto {
 
 
   ext_building?: {
-    id:string;
-    geometry:Point|Polygon|MultiPolygon;
-    distance:number
+    id: string;
+    geometry: Point | Polygon | MultiPolygon;
+    distance: number
   }
 
-  ext_place_geometry?:Point;
+  ext_place_geometry?: Point;
 
-  constructor(data={}) {
+  constructor(data = {}) {
     Object.assign(this, data);
     this.ext_name = this.names?.primary;
   }
@@ -169,7 +189,7 @@ export class PlaceResponseDto {
     description: 'Geometric representation of the place.',
     type: () => GeometryDto,
   })
-  geometry: Point|Polygon|MultiPolygon;
+  geometry: Point | Polygon | MultiPolygon;
 
   @ApiProperty({
     description: 'Properties and additional details of the place.',
@@ -193,14 +213,14 @@ export class PlaceResponseDto {
   }
 }
 
-export const toPlaceDto = (place: Place, requestQuery:GetByLocationDto):PlaceResponseDto => {
+export const toPlaceDto = (place: Place, requestQuery: GetByLocationDto): PlaceResponseDto => {
 
-  const excludeFieldsFromProperties = ['properties','geometry','ext_distance','bbox'];
+  const excludeFieldsFromProperties = ['properties', 'geometry', 'ext_distance', 'bbox'];
 
-  
-  const rPlace =  new PlaceResponseDto(place)
 
-  const properties = {...rPlace.properties};
+  const rPlace = new PlaceResponseDto(place)
+
+  const properties = { ...rPlace.properties };
   excludeFieldsFromProperties.forEach(field => delete properties[field]);
 
   rPlace.properties = properties;
@@ -208,26 +228,26 @@ export const toPlaceDto = (place: Place, requestQuery:GetByLocationDto):PlaceRes
   rPlace.geometry = place.geometry;
 
   //remove any fields that are not requested
-  if(requestQuery.includes && requestQuery.includes.length > 0)rPlace.properties = applyIncludesToDto(rPlace.properties,requestQuery.includes);
+  if (requestQuery.includes && requestQuery.includes.length > 0) rPlace.properties = applyIncludesToDto(rPlace.properties, requestQuery.includes);
 
   return rPlace;
 }
 
-export const toPlaceWithBuildingDto = (place: PlaceWithBuilding, requestQuery:GetByLocationDto):PlaceResponseDto => {
-  
-    const rPlace =  toPlaceDto(place,requestQuery)
+export const toPlaceWithBuildingDto = (place: PlaceWithBuilding, requestQuery: GetByLocationDto): PlaceResponseDto => {
 
-    const placeGeometry = rPlace.geometry;
-    //swap geometry for building_geometry
-    rPlace.geometry = place.building.geometry;
+  const rPlace = toPlaceDto(place, requestQuery)
 
-    //ensure properties.building is deleted and only ext_building exists
-    //assign building to properties
-    rPlace.properties.ext_building = place.building
-    rPlace.properties.ext_place_geometry = placeGeometry as Point;
+  const placeGeometry = rPlace.geometry;
+  //swap geometry for building_geometry
+  rPlace.geometry = place.building.geometry;
 
-    if(requestQuery.includes && requestQuery.includes.length > 0)rPlace.properties = applyIncludesToDto(rPlace.properties,requestQuery.includes);
+  //ensure properties.building is deleted and only ext_building exists
+  //assign building to properties
+  rPlace.properties.ext_building = place.building
+  rPlace.properties.ext_place_geometry = placeGeometry as Point;
 
-    return rPlace;
-  }
+  if (requestQuery.includes && requestQuery.includes.length > 0) rPlace.properties = applyIncludesToDto(rPlace.properties, requestQuery.includes);
+
+  return rPlace;
+}
 

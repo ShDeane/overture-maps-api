@@ -15,7 +15,7 @@ export class BrandNamesDto {
   @ApiProperty({ description: 'Primary name of the place.', example: 'Central Park' })
   primary: string;
 
-  @ApiPropertyOptional({ description: 'Common names in different languages.', type: 'object', example: { en: 'Central Park', es: 'Parque Central' } ,properties: {}})
+  @ApiPropertyOptional({ description: 'Common names in different languages.', type: 'object', example: { en: 'Central Park', es: 'Parque Central' }, properties: {} })
   common?: Record<string, string>;
 
   @ApiPropertyOptional({
@@ -26,6 +26,8 @@ export class BrandNamesDto {
 }
 
 
+import { ExternalIdsDto } from '../responses/place-response.dto';
+
 export class BrandDto {
   @ApiProperty({
     description: 'Names associated with the brand, usually Primary is the most useful',
@@ -33,8 +35,8 @@ export class BrandDto {
   })
   names: BrandNamesDto;
 
-  @ApiPropertyOptional({ description: 'Wikidata identifier for the brand.', example: 'Q37158' })
-  wikidata?: string;
+  @ApiPropertyOptional({ description: 'External knowledge graph identifiers.', type: () => ExternalIdsDto })
+  external_ids?: ExternalIdsDto;
 
   constructor(data: Brand) {
     Object.assign(this, data);

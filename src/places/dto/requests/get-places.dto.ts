@@ -65,6 +65,22 @@ export class GetPlacesDto extends GetByLocationDto {
   brand_wikidata?: string;
 
   @ApiPropertyOptional({
+    description: 'Wikidata identifier for the place.',
+    example: 'Q160236',
+  })
+  @IsOptional()
+  @IsString()
+  wikidata?: string;
+
+  @ApiPropertyOptional({
+    description: 'Wikipedia identifier (language:title).',
+    example: 'en:Central_Park',
+  })
+  @IsOptional()
+  @IsString()
+  wikipedia?: string;
+
+  @ApiPropertyOptional({
     description: 'Brand name associated with the place.',
     example: 'Starbucks',
   })

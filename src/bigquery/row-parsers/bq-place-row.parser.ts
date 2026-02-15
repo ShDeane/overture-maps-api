@@ -3,74 +3,83 @@ import { parsePointToGeoJSON, parsePolygonToGeoJSON, parseWKTToGeoJSON } from ".
 
 export const parsePlaceRow = (row: any): Place => {
 
-    return {
-        id: row.id,
-        geometry:  parsePointToGeoJSON(row.geometry.value),
-        bbox: {
-          xmin: parseFloat(row.bbox.xmin),
-          xmax: parseFloat(row.bbox.xmax),
-          ymin: parseFloat(row.bbox.ymin),
-          ymax: parseFloat(row.bbox.ymax),
-        },
-        version: row.version,
-        sources: row.sources.list.map((source: any) => ({
-          property: source.element.property,
-          dataset: source.element.dataset,
-          record_id: source.element.record_id,
-          update_time: source.element.update_time,
-          confidence: source.element.confidence ? parseFloat(source.element.confidence) : null,
-        })),
-        names: {
-          primary: row.names.primary,
-          common: row.names.common,
-          rules: row.names.rules,
-        },
-        categories: {
-          primary: row.categories?.primary,
-          alternate: row.categories?.alternate?.split ? row.categories?.alternate?.split(',') : [],
-        },
-        confidence: parseFloat(row.confidence),
-        websites: row.websites?.split ? row.websites.split(',') : [],
-        socials: row.socials?.list ? row.socials.list.map((social: any) => social.element) : [],
-        emails: row.emails?.split ? row.emails.split(',') : [],
-        phones: row.phones?.list ? row.phones.list.map((phone: any) => phone.element) : [],
-        brand: row.brand ? {
-          names: {
-            primary: row.brand?.names?.primary,
-            common: row.brand?.names?.common,
-            rules: row.brand?.names?.rules,
-          },
-          wikidata: row.brand?.wikidata,
-        } : undefined,
-        addresses: row.addresses?.list ? row.addresses?.list.map((address: any) => ({
-          freeform: address.element?.freeform,
-          locality: address.element?.locality,
-          postcode: address.element?.postcode,
-          region: address.element?.region,
-          country: address.element?.country,
-        })) : [],
-        ext_distance: parseFloat(row.ext_distance),
-        operating_status: row.operating_status || undefined,
-        basic_category: row.basic_category || undefined,
-        taxonomy: row.taxonomy ? {
-          primary: row.taxonomy.primary || undefined,
-          hierarchy: row.taxonomy?.hierarchy?.list?.map((h: any) => h.element) || [],
-          alternates: row.taxonomy?.alternates?.list?.map((a: any) => a.element) || [],
-        } : undefined,
+  return {
+    id: row.id,
+    geometry: parsePointToGeoJSON(row.geometry.value),
+    bbox: {
+      xmin: parseFloat(row.bbox.xmin),
+      xmax: parseFloat(row.bbox.xmax),
+      ymin: parseFloat(row.bbox.ymin),
+      ymax: parseFloat(row.bbox.ymax),
+    },
+    version: row.version,
+    sources: row.sources.list.map((source: any) => ({
+      property: source.element.property,
+      dataset: source.element.dataset,
+      record_id: source.element.record_id,
+      update_time: source.element.update_time,
+      confidence: source.element.confidence ? parseFloat(source.element.confidence) : null,
+    })),
+    names: {
+      primary: row.names.primary,
+      common: row.names.common,
+      rules: row.names.rules,
+    },
+    categories: {
+      primary: row.categories?.primary,
+      alternate: row.categories?.alternate?.split ? row.categories?.alternate?.split(',') : [],
+    },
+    confidence: parseFloat(row.confidence),
+    websites: row.websites?.split ? row.websites.split(',') : [],
+    socials: row.socials?.list ? row.socials.list.map((social: any) => social.element) : [],
+    emails: row.emails?.split ? row.emails.split(',') : [],
+    phones: row.phones?.list ? row.phones.list.map((phone: any) => phone.element) : [],
+    brand: row.brand ? {
+      names: {
+        primary: row.brand?.names?.primary,
+        common: row.brand?.names?.common,
+        rules: row.brand?.names?.rules,
+      },
+      external_ids: {
+        wikidata: row.brand?.wikidata,
+      },
+    } : undefined,
+    addresses: row.addresses?.list ? row.addresses?.list.map((address: any) => ({
+      freeform: address.element?.freeform,
+      locality: address.element?.locality,
+      postcode: address.element?.postcode,
+      region: address.element?.region,
+      country: address.element?.country,
+    })) : [],
+    ext_distance: parseFloat(row.ext_distance),
+    operating_status: row.operating_status || undefined,
+    basic_category: row.basic_category || undefined,
+    external_ids: {
+      wikidata: row.wikidata || row.taxonomy?.wikidata || undefined,
+      wikipedia: row.wikipedia || undefined, // Extract if available
+    },
+    taxonomy: row.taxonomy ? {
+      primary: row.taxonomy.primary || undefined,
+      hierarchy: row.taxonomy?.hierarchy?.list?.map((h: any) => h.element) || [],
+      alternates: row.taxonomy?.alternates?.list?.map((a: any) => a.element) || [],
+      external_ids: {
+        wikidata: row.taxonomy.wikidata || undefined,
       }
-    }
+    } : undefined,
+  }
+}
 
 export const parsePlaceWithBuildingRow = (row: any): PlaceWithBuilding => {
 
-    const place = parsePlaceRow(row)
-     const building = {
-        id: row.building_id,
-        distance: parseFloat(row.distance_to_nearest_building),
-        geometry: parseWKTToGeoJSON(row.building_geometry.value),
+  const place = parsePlaceRow(row)
+  const building = {
+    id: row.building_id,
+    distance: parseFloat(row.distance_to_nearest_building),
+    geometry: parseWKTToGeoJSON(row.building_geometry.value),
 
-     }
-    return {
-        ...place,
-        building,
-    }
+  }
+  return {
+    ...place,
+    building,
+  }
 }
