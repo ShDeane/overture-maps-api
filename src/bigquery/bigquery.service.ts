@@ -54,7 +54,7 @@ export class BigQueryService {
   ): Promise<{ names: { primary: string, common: string, rules: string }; wikidata: string; counts: { places: number } }[]> {
 
     let query = `-- Overture Maps API: Get brands nearby
-      SELECT DISTINCT brand , count(id) as count_places
+      SELECT DISTINCT brand, brand.wikidata as brand_wikidata, count(id) as count_places
       FROM \`${SOURCE_DATASET}.place\`
     `;
 
@@ -89,7 +89,7 @@ export class BigQueryService {
 
     return rows.map((row: any) => ({
       names: row.brand?.names,
-      wikidata: row.brand?.wikidata,
+      wikidata: row.brand?.wikidata || row.brand_wikidata || undefined,
       counts: {
         places: row.count_places
       }
@@ -222,6 +222,11 @@ export class BigQueryService {
       place_with_nearest_building AS (
         SELECT
           p.*,
+          p.wikidata,
+          p.wikipedia,
+          p.taxonomy.wikidata as tax_wikidata,
+          p.taxonomy.wikipedia as tax_wikipedia,
+          p.brand.wikidata as brand_wikidata,
           b.building_id as building_id,
           b.building_geometry AS building_geometry,
           ST_Distance(p.geometry, b.building_geometry) AS distance_to_nearest_building,
@@ -253,6 +258,11 @@ export class BigQueryService {
       -- Step 2: Select places and buildings within the search area where the building contains the place geometry
       SELECT
         p.*,
+        p.wikidata,
+        p.wikipedia,
+        p.taxonomy.wikidata as tax_wikidata,
+        p.taxonomy.wikipedia as tax_wikipedia,
+        p.brand.wikidata as brand_wikidata,
         b.id as building_id,
         b.geometry AS building_geometry,
         0 as distance_to_nearest_building
@@ -309,7 +319,7 @@ export class BigQueryService {
 
     // Base query and distance calculation if latitude and longitude are provided
     queryParts.push(`-- Overture Maps API: Get places nearby \n`);
-    queryParts.push(`SELECT *`);
+    queryParts.push(`SELECT *, wikidata, wikipedia, taxonomy.wikidata as tax_wikidata, taxonomy.wikipedia as tax_wikipedia, brand.wikidata as brand_wikidata`);
 
     if (latitude && longitude) {
       queryParts.push(`, ST_Distance(geometry, ST_GeogPoint(${longitude}, ${latitude})) AS ext_distance`);

@@ -41,7 +41,7 @@ export const parsePlaceRow = (row: any): Place => {
         rules: row.brand?.names?.rules,
       },
       external_ids: {
-        wikidata: row.brand?.wikidata,
+        wikidata: row.brand?.wikidata || row.brand_wikidata || undefined,
       },
     } : undefined,
     addresses: row.addresses?.list ? row.addresses?.list.map((address: any) => ({
@@ -58,10 +58,13 @@ export const parsePlaceRow = (row: any): Place => {
       wikidata: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'wikidata' || s.element?.source?.toLowerCase() === 'wikidata')?.element?.value ||
         row.wikidata ||
         row.taxonomy?.wikidata ||
+        row.tax_wikidata ||
         row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'wikidata')?.element?.record_id ||
         undefined,
       wikipedia: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'wikipedia' || s.element?.source?.toLowerCase() === 'wikipedia')?.element?.value ||
         row.wikipedia ||
+        row.taxonomy?.wikipedia ||
+        row.tax_wikipedia ||
         row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'wikipedia')?.element?.record_id ||
         undefined,
       osm: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'osm' || s.element?.source?.toLowerCase() === 'osm')?.element?.value ||
