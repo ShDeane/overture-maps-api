@@ -55,10 +55,21 @@ export const parsePlaceRow = (row: any): Place => {
     operating_status: row.operating_status || undefined,
     basic_category: row.basic_category || undefined,
     external_ids: {
-      wikidata: row.wikidata || row.taxonomy?.wikidata || row.sources?.list?.find((s: any) => s.element?.dataset === 'wikidata')?.element?.record_id || undefined,
-      wikipedia: row.wikipedia || row.sources?.list?.find((s: any) => s.element?.dataset === 'wikipedia')?.element?.record_id || undefined,
-      osm: row.sources?.list?.find((s: any) => s.element?.dataset === 'osm')?.element?.record_id || undefined,
-      google_places: row.sources?.list?.find((s: any) => s.element?.dataset === 'google')?.element?.record_id || undefined,
+      wikidata: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'wikidata' || s.element?.source?.toLowerCase() === 'wikidata')?.element?.value ||
+        row.wikidata ||
+        row.taxonomy?.wikidata ||
+        row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'wikidata')?.element?.record_id ||
+        undefined,
+      wikipedia: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'wikipedia' || s.element?.source?.toLowerCase() === 'wikipedia')?.element?.value ||
+        row.wikipedia ||
+        row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'wikipedia')?.element?.record_id ||
+        undefined,
+      osm: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'osm' || s.element?.source?.toLowerCase() === 'osm')?.element?.value ||
+        row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'osm')?.element?.record_id ||
+        undefined,
+      google_places: row.external_ids?.list?.find((s: any) => s.element?.side?.toLowerCase() === 'google' || s.element?.source?.toLowerCase() === 'google')?.element?.value ||
+        row.sources?.list?.find((s: any) => s.element?.dataset?.toLowerCase() === 'google')?.element?.record_id ||
+        undefined,
     },
     taxonomy: row.taxonomy ? {
       primary: row.taxonomy.primary || undefined,
