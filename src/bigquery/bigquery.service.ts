@@ -222,8 +222,6 @@ export class BigQueryService {
       place_with_nearest_building AS (
         SELECT
           p.*,
-          p.wikidata,
-          p.wikipedia,
           p.brand.wikidata as brand_wikidata,
           b.building_id as building_id,
           b.building_geometry AS building_geometry,
@@ -256,8 +254,6 @@ export class BigQueryService {
       -- Step 2: Select places and buildings within the search area where the building contains the place geometry
       SELECT
         p.*,
-        p.wikidata,
-        p.wikipedia,
         p.brand.wikidata as brand_wikidata,
         b.id as building_id,
         b.geometry AS building_geometry,
@@ -315,7 +311,7 @@ export class BigQueryService {
 
     // Base query and distance calculation if latitude and longitude are provided
     queryParts.push(`-- Overture Maps API: Get places nearby \n`);
-    queryParts.push(`SELECT *, wikidata, wikipedia, brand.wikidata as brand_wikidata`);
+    queryParts.push(`SELECT *, brand.wikidata as brand_wikidata`);
 
     if (latitude && longitude) {
       queryParts.push(`, ST_Distance(geometry, ST_GeogPoint(${longitude}, ${latitude})) AS ext_distance`);
@@ -355,12 +351,11 @@ export class BigQueryService {
     }
 
     if (wikidata) {
-      whereClauses.push(`wikidata = "${wikidata}"`);
+      // No top-level wikidata column exists; search brand.wikidata instead
+      whereClauses.push(`brand.wikidata = "${wikidata}"`);
     }
 
-    if (wikipedia) {
-      whereClauses.push(`wikipedia = "${wikipedia}"`);
-    }
+    // Note: wikipedia filtering not supported — no column exists on the place table
 
     // Combine where clauses
     if (whereClauses.length > 0) {
@@ -529,12 +524,11 @@ WHERE ST_WITHIN(s.geometry, search_area_geometry) and ST_DWithin(geometry, ST_Ge
     }
 
     if (wikidata) {
-      whereClauses.push(`wikidata = "${wikidata}"`);
+      // No top-level wikidata column exists; search brand.wikidata instead
+      whereClauses.push(`brand.wikidata = "${wikidata}"`);
     }
 
-    if (wikipedia) {
-      whereClauses.push(`wikipedia = "${wikipedia}"`);
-    }
+    // Note: wikipedia filtering not supported — no column exists on the place table
 
     return whereClauses;
   }

@@ -104,8 +104,8 @@ export const parsePlaceRow = (row: any): Place => {
     operating_status: row.operating_status || undefined,
     basic_category: row.basic_category || undefined,
     external_ids: {
-      wikidata: row.wikidata || findIdInArrays(row, 'wikidata') || undefined,
-      wikipedia: row.wikipedia || findIdInArrays(row, 'wikipedia') || undefined,
+      wikidata: row.brand_wikidata || row.brand?.wikidata || findIdInArrays(row, 'wikidata') || undefined,
+      wikipedia: findIdInArrays(row, 'wikipedia') || undefined,
       osm: findIdInArrays(row, 'osm') || undefined,
       google_places: findIdInArrays(row, 'google') || undefined,
     },
