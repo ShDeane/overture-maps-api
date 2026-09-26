@@ -65,13 +65,10 @@ export const parsePlaceRow = (row: any): Place => {
       common: row.names.common,
       rules: row.names.rules,
     },
-    categories: {
-      primary: row.categories?.primary,
-      alternate: row.categories?.alternate?.list
-        ? row.categories.alternate.list.map((a: any) => a.element)
-        : (Array.isArray(row.categories?.alternate) ? row.categories.alternate
-        : (row.categories?.alternate?.split ? row.categories.alternate.split(',') : [])),
-    },
+    // Overture's 2026-09 release moved `categories` to `taxonomy`
+    // (alternate -> alternates). Read the new field, fall back to the old one,
+    // and keep returning the `categories` shape API clients already use.
+    categories: parseCategories(row.taxonomy ?? row.categories),
     confidence: parseFloat(row.confidence),
     websites: row.websites?.split ? row.websites.split(',') : [],
     socials: row.socials?.list ? row.socials.list.map((social: any) => social.element) : (Array.isArray(row.socials) ? row.socials : []),
@@ -130,4 +127,17 @@ export const parsePlaceWithBuildingRow = (row: any): PlaceWithBuilding => {
     ...place,
     building,
   }
+}
+function parseCategories(c: any): { primary: string | undefined; alternate: string[] } {
+  const alt = c?.alternates ?? c?.alternate;
+  return {
+    primary: c?.primary ?? undefined,
+    alternate: alt?.list
+      ? alt.list.map((a: any) => a.element)
+      : Array.isArray(alt)
+        ? alt
+        : alt?.split
+          ? alt.split(',')
+          : [],
+  };
 }

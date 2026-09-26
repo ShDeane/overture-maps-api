@@ -7,6 +7,19 @@ import { parsePointToGeoJSON, parsePolygonToGeoJSON } from '../utils/geojson';
 import { parsePlaceRow, parsePlaceWithBuildingRow } from './row-parsers/bq-place-row.parser';
 import { parseBuildingRow } from './row-parsers/bq-building-row.parser';
 
+/**
+ * Overture's 2026-09 release replaced `categories` (primary, alternate) with
+ * `taxonomy` (primary, hierarchy, alternates). Queries filter on
+ * taxonomy.primary; the row parser still returns the old `categories` shape.
+ *
+ * Category names are interpolated into SQL, so only plain taxonomy names
+ * (lowercase letters, digits, underscores) are passed through.
+ */
+function categoryList(categories: string[]): string {
+  const safe = categories.filter((c) => /^[a-z0-9_]{1,64}$/.test(c));
+  return `[${safe.map((c) => `"${c}"`).join(',')}]`;
+}
+
 interface IQueryStatistics {
   totalBytesProcessed: number;
   totalBytesBilled: number;
@@ -74,7 +87,7 @@ export class BigQueryService {
         }
         query += ` AND brand IS NOT NULL`;
         if(categories && categories.length > 0){
-          query += ` AND categories.primary IN UNNEST(["${categories.join('","')}"])`;
+          query += ` AND taxonomy.primary IN UNNEST(${categoryList(categories)})`;
         }
         if (require_wikidata) {
           query += ` AND brand.wikidata IS NOT NULL`;
@@ -125,11 +138,11 @@ export class BigQueryService {
 
 
     let query = `-- Overture Maps API: Get categories
-      SELECT DISTINCT categories.primary AS category_primary,
+      SELECT DISTINCT taxonomy.primary AS category_primary,
       count(1) as count_places,
       count(distinct brand.names.primary) as count_brands
       FROM \`${SOURCE_DATASET}.place\`
-      WHERE categories.primary IS NOT NULL
+      WHERE taxonomy.primary IS NOT NULL
     `;
 
     const whereClauses = this.buildWhereClauses({ country, latitude, longitude, radius });
@@ -195,7 +208,7 @@ export class BigQueryService {
     }
 
     if (categories && categories.length > 0) {
-      whereClauses.push(`p.categories.primary IN UNNEST(["${categories.join('","')}"])`);
+      whereClauses.push(`p.taxonomy.primary IN UNNEST(${categoryList(categories)})`);
     }
 
     if (min_confidence !== undefined) {
@@ -338,7 +351,7 @@ export class BigQueryService {
     }
 
     if (categories && categories.length > 0) {
-      whereClauses.push(`categories.primary IN UNNEST(["${categories.join('","')}"])`);
+      whereClauses.push(`taxonomy.primary IN UNNEST(${categoryList(categories)})`);
     }
 
     if (min_confidence) {
@@ -514,7 +527,7 @@ WHERE ST_WITHIN(s.geometry, search_area_geometry) and ST_DWithin(geometry, ST_Ge
       whereClauses.push(`brand.names.primary = "${brand_name}"`);
     }
     if (categories && categories.length > 0) {
-      whereClauses.push(`categories.primary IN UNNEST(["${categories.join('","')}"])`);
+      whereClauses.push(`taxonomy.primary IN UNNEST(${categoryList(categories)})`);
     }
     if (min_confidence !== undefined) {
       whereClauses.push(`confidence >= ${min_confidence}`);
