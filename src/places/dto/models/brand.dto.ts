@@ -26,8 +26,6 @@ export class BrandNamesDto {
 }
 
 
-import { ExternalIdsDto } from '../responses/place-response.dto';
-
 export class BrandDto {
   @ApiProperty({
     description: 'Names associated with the brand, usually Primary is the most useful',
@@ -35,8 +33,8 @@ export class BrandDto {
   })
   names: BrandNamesDto;
 
-  @ApiPropertyOptional({ description: 'External knowledge graph identifiers.', type: () => ExternalIdsDto })
-  external_ids?: ExternalIdsDto;
+  @ApiPropertyOptional({ description: 'Wikidata identifier for the brand.', example: 'Q37158' })
+  wikidata?: string;
 
   constructor(data: Brand) {
     Object.assign(this, data);

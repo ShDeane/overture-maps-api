@@ -54,7 +54,7 @@ export class BigQueryService {
   ): Promise<{ names: { primary: string, common: string, rules: string }; wikidata: string; counts: { places: number } }[]> {
 
     let query = `-- Overture Maps API: Get brands nearby
-      SELECT DISTINCT brand, brand.wikidata as brand_wikidata, count(id) as count_places
+      SELECT DISTINCT brand , count(id) as count_places
       FROM \`${SOURCE_DATASET}.place\`
     `;
 
@@ -89,7 +89,7 @@ export class BigQueryService {
 
     return rows.map((row: any) => ({
       names: row.brand?.names,
-      wikidata: row.brand?.wikidata || row.brand_wikidata || undefined,
+      wikidata: row.brand?.wikidata,
       counts: {
         places: row.count_places
       }
@@ -222,7 +222,6 @@ export class BigQueryService {
       place_with_nearest_building AS (
         SELECT
           p.*,
-          p.brand.wikidata as brand_wikidata,
           b.building_id as building_id,
           b.building_geometry AS building_geometry,
           ST_Distance(p.geometry, b.building_geometry) AS distance_to_nearest_building,
@@ -254,7 +253,6 @@ export class BigQueryService {
       -- Step 2: Select places and buildings within the search area where the building contains the place geometry
       SELECT
         p.*,
-        p.brand.wikidata as brand_wikidata,
         b.id as building_id,
         b.geometry AS building_geometry,
         0 as distance_to_nearest_building
@@ -302,16 +300,14 @@ export class BigQueryService {
     categories?: string[],
     min_confidence?: number,
     limit?: number,
-    source?: string,
-    wikidata?: string,
-    wikipedia?: string
+    source?: string
   ): Promise<Place[]> {
 
     let queryParts: string[] = [];
 
     // Base query and distance calculation if latitude and longitude are provided
     queryParts.push(`-- Overture Maps API: Get places nearby \n`);
-    queryParts.push(`SELECT *, brand.wikidata as brand_wikidata`);
+    queryParts.push(`SELECT *`);
 
     if (latitude && longitude) {
       queryParts.push(`, ST_Distance(geometry, ST_GeogPoint(${longitude}, ${latitude})) AS ext_distance`);
@@ -349,13 +345,6 @@ export class BigQueryService {
       // Filter for at least one sources element with matching dataset
       whereClauses.push(`EXISTS (SELECT 1 FROM UNNEST(sources) AS s WHERE s.dataset = "${source}")`);
     }
-
-    if (wikidata) {
-      // No top-level wikidata column exists; search brand.wikidata instead
-      whereClauses.push(`brand.wikidata = "${wikidata}"`);
-    }
-
-    // Note: wikipedia filtering not supported — no column exists on the place table
 
     // Combine where clauses
     if (whereClauses.length > 0) {
@@ -483,9 +472,7 @@ WHERE ST_WITHIN(s.geometry, search_area_geometry) and ST_DWithin(geometry, ST_Ge
     brand_name,
     categories,
     min_confidence,
-    require_wikidata,
-    wikidata,
-    wikipedia
+    require_wikidata
   }: {
     country?: string;
     latitude?: number;
@@ -496,8 +483,6 @@ WHERE ST_WITHIN(s.geometry, search_area_geometry) and ST_DWithin(geometry, ST_Ge
     categories?: string[];
     min_confidence?: number;
     require_wikidata?: boolean;
-    wikidata?: string;
-    wikipedia?: string;
   }): string[] {
     const whereClauses: string[] = [];
 
@@ -522,13 +507,6 @@ WHERE ST_WITHIN(s.geometry, search_area_geometry) and ST_DWithin(geometry, ST_Ge
     if (require_wikidata) {
       whereClauses.push(`brand.wikidata IS NOT NULL`);
     }
-
-    if (wikidata) {
-      // No top-level wikidata column exists; search brand.wikidata instead
-      whereClauses.push(`brand.wikidata = "${wikidata}"`);
-    }
-
-    // Note: wikipedia filtering not supported — no column exists on the place table
 
     return whereClauses;
   }

@@ -1,13 +1,6 @@
 import { MultiPolygon, Point, Polygon } from "geojson";
 import { Bbox } from "../../common/interfaces/geometry.interface";
 
-export interface ExternalIds {
-  wikidata?: string;
-  wikipedia?: string;
-  osm?: string;
-  google_places?: string;
-}
-
 export interface Place {
   id: string;
   geometry: Point | Polygon | MultiPolygon;
@@ -27,7 +20,6 @@ export interface Place {
   operating_status?: string;
   basic_category?: string;
   taxonomy?: Taxonomy;
-  external_ids?: ExternalIds;
   theme?: string;
   type?: string;
 }
@@ -64,12 +56,11 @@ export interface Taxonomy {
   primary?: string;
   hierarchy?: string[];
   alternates?: string[];
-  external_ids?: ExternalIds;
 }
 
 export interface Brand {
   names: BrandNames;
-  external_ids?: ExternalIds;
+  wikidata?: string;
 }
 
 export interface BrandNames {

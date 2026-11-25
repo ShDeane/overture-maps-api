@@ -9,20 +9,6 @@ import { GetByLocationDto } from '../../../common/dto/requests/get-by-location.d
 
 import { applyIncludesToDto } from '../../../common/dto/responses/includes.dto';
 
-export class ExternalIdsDto {
-  @ApiPropertyOptional({ description: 'Wikidata entity ID.', example: 'Q160236' })
-  wikidata?: string;
-
-  @ApiPropertyOptional({ description: 'Wikipedia page identifier.', example: 'en:Central_Park' })
-  wikipedia?: string;
-
-  @ApiPropertyOptional({ description: 'OpenStreetMap identifier.', example: 'node/123' })
-  osm?: string;
-
-  @ApiPropertyOptional({ description: 'Google Places identifier.', example: 'ChIJ... ' })
-  google_places?: string;
-}
-
 export class RulesDto {
   @ApiProperty({ description: 'Variant of the rule.', example: 'Abbreviation' })
   variant: string;
@@ -78,9 +64,6 @@ export class TaxonomyDto {
 
   @ApiPropertyOptional({ description: 'Alternate taxonomy categories.', type: [String] })
   alternates?: string[];
-
-  @ApiPropertyOptional({ description: 'External knowledge graph identifiers.', type: () => ExternalIdsDto })
-  external_ids?: ExternalIdsDto;
 }
 
 export class PlacePropertiesDto {
@@ -123,9 +106,6 @@ export class PlacePropertiesDto {
 
   @ApiPropertyOptional({ description: 'Full taxonomy with hierarchy.', type: () => TaxonomyDto })
   taxonomy?: TaxonomyDto;
-
-  @ApiPropertyOptional({ description: 'External knowledge graph identifiers.', type: () => ExternalIdsDto })
-  external_ids?: ExternalIdsDto;
 
   @ApiProperty({ description: 'Theme associated with the place.', example: 'Restaurant' })
   theme?: string;

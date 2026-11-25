@@ -30,19 +30,21 @@ export class PlacesService {
     private readonly cacheService: CacheService,
   ) { }
   async getPlaces(query: GetPlacesDto): Promise<Place[]> {
-    const { lat, lng, radius, country, min_confidence, brand_wikidata, brand_name, categories, limit, source, wikidata, wikipedia } = query;
+
+    const { lat, lng, radius, country, min_confidence, brand_wikidata, brand_name, categories, limit, source } = query;
     const cacheKey = `get-places-${JSON.stringify(query)}`;
     let results: Place[] | undefined = await this.cacheService.get<Place[]>(cacheKey);
     if (!results) {
-      results = await this.bigQueryService.getPlacesNearby(lat, lng, radius, brand_wikidata, brand_name, country, categories, min_confidence, limit, source, wikidata, wikipedia);
+      results = await this.bigQueryService.getPlacesNearby(lat, lng, radius, brand_wikidata, brand_name, country, categories, min_confidence, limit);
       await this.cacheService.set(cacheKey, results, 3600);
     }
-    // Filter by source if provided (fallback filter)
+    // Filter by source if provided
     if (source) {
       results = results.filter(place => Array.isArray(place.sources) && place.sources.some(s => s.dataset === source));
     }
     return results;
   }
+
 
   async getPlacesWithNearestBuilding(query: GetPlacesWithBuildingsDto): Promise<PlaceWithBuilding[]> {
 
@@ -55,6 +57,7 @@ export class PlacesService {
       await this.cacheService.set(cacheKey, results, 3600);
     }
     return results;
+
   }
 
   async getBrands(query: GetBrandsDto): Promise<BrandDto[]> {
