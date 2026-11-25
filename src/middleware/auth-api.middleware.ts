@@ -18,6 +18,29 @@ const TheAuthAPI = require('theauthapi');
 // a module reload.
 const getDemoApiKey = (): string | undefined => process.env.DEMO_API_KEY;
 
+// DISABLE_DEMO_RESTRICTIONS=true is for a private deployment with a single
+// trusted client and no TheAuthAPI: the DEMO_API_KEY then acts as that
+// client's full key. It is a paid, non-demo account, so the demo city check,
+// the demo radius and limit caps, and the per-IP demo throttle do not apply.
+// Set QUOTA_MODE=off alongside it when no plan source is configured.
+const PRIVATE_USER: User = {
+  isDemoAccount: false,
+  isPaidAccount: true,
+  accountId: 'private-account-id',
+  userId: 'private-user-id',
+};
+
+const DEMO_USER: User = {
+  isDemoAccount: true,
+  accountId: 'demo-account-id',
+  userId: 'demo-user-id',
+};
+
+function demoKeyUser(): User {
+  const unrestricted = process.env.DISABLE_DEMO_RESTRICTIONS === 'true';
+  return { ...(unrestricted ? PRIVATE_USER : DEMO_USER) };
+}
+
 // Avoid writing raw API keys to logs.
 function maskKey(key?: string): string {
   if (!key) return '(none)';
@@ -76,12 +99,7 @@ export class AuthAPIMiddleware implements NestMiddleware {
     // Only enabled when DEMO_API_KEY is explicitly configured.
     const demoApiKey = getDemoApiKey();
     if (demoApiKey && apiKeyString === demoApiKey) {
-      const demoUser: User = {
-        isDemoAccount: true,
-        accountId: 'demo-account-id',
-        userId: 'demo-user-id'
-      };
-      req['user'] = req.res.locals['user'] = demoUser;
+      req['user'] = req.res.locals['user'] = demoKeyUser();
       next();
       return;
     }

@@ -56,6 +56,55 @@ describe('AuthAPIMiddleware demo key handling', () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
+  describe('with DISABLE_DEMO_RESTRICTIONS (private single-client deployment)', () => {
+    let originalFlag: string | undefined;
+
+    beforeEach(() => {
+      originalFlag = process.env.DISABLE_DEMO_RESTRICTIONS;
+    });
+
+    afterEach(() => {
+      if (originalFlag === undefined) delete process.env.DISABLE_DEMO_RESTRICTIONS;
+      else process.env.DISABLE_DEMO_RESTRICTIONS = originalFlag;
+    });
+
+    it('treats the configured key as a paid, non-demo account', async () => {
+      process.env.DISABLE_DEMO_RESTRICTIONS = 'true';
+      const middleware = new AuthAPIMiddleware();
+      const { req, res } = makeReqRes(DEMO_KEY);
+      const next = jest.fn();
+      await middleware.use(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(req.user).toEqual(
+        expect.objectContaining({ isDemoAccount: false, isPaidAccount: true, accountId: 'private-account-id' }),
+      );
+      expect(res.locals.user).toBe(req.user);
+    });
+
+    it('keeps demo restrictions when the flag is anything other than "true"', async () => {
+      process.env.DISABLE_DEMO_RESTRICTIONS = 'yes';
+      const middleware = new AuthAPIMiddleware();
+      const { req, res } = makeReqRes(DEMO_KEY);
+      await middleware.use(req, res, jest.fn());
+
+      expect(req.user).toEqual(expect.objectContaining({ isDemoAccount: true }));
+    });
+
+    it('does not grant anything to other keys', async () => {
+      process.env.DISABLE_DEMO_RESTRICTIONS = 'true';
+      const middleware = new AuthAPIMiddleware();
+      const authenticateKey = jest.fn().mockResolvedValue(null);
+      (middleware as any).theAuthAPI = { apiKeys: { authenticateKey } };
+      const { req, res } = makeReqRes('SOME-OTHER-KEY');
+      const next = jest.fn();
+      await middleware.use(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
+    });
+  });
+
   it('rejects unknown keys with 401 when TheAuthAPI does not authenticate them', async () => {
     const middleware = new AuthAPIMiddleware();
     (middleware as any).theAuthAPI = { apiKeys: { authenticateKey: jest.fn().mockResolvedValue(null) } };
